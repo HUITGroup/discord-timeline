@@ -60,17 +60,20 @@ func sendTimesline(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// メッセージが送られたチャンネルの名前にtimes_を含んでいれば、処理を続ける
 	if strings.Contains(reciveMessageChannel.Name, "times_") {
-		// 発言されたギルドIDを取得
-		guild, err := s.Guild(m.GuildID)
+		// 発言されたギルドのGuild構造体を取得
+		guildChannels, err := s.GuildChannels(m.GuildID)
 		if err != nil {
 			log.Println("Error cloud not fetch Guild info,", err)
+			return
 		}
-		// ギルドIDから配下のチャンネルを全て探索
-		// timelineチャンネルがあれば、そこに発言を送る
-		for _, channelInGuild := range guild.Channels {
+		// 発言されたギルド配下のチャンネルを全て探索
+		// timelineという名前のチャンネルがあれば、そこに発言を送る
+		for _, channelInGuild := range guildChannels {
+			fmt.Println(channelInGuild)
 			// timelineチャンネルにメッセージを送信
 			if strings.Contains(channelInGuild.Name, "timeline") {
-				s.ChannelMessageSend(channelInGuild.GuildID, contents)
+				fmt.Println(channelInGuild.Name)
+				s.ChannelMessageSend(channelInGuild.ID, contents)
 				return
 			}
 		}
