@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -23,9 +24,7 @@ func main() {
 		fmt.Println("Error creacting Discord session,", err)
 	}
 
-	// todo sendMessageされたとき、そのチャンネル名がtimes_で始まれば
-	// timesチャンネルで発生したsendMessageを全てtimelineチャンネルに送信
-	dg.AddHandler(sendTimeline)
+	dg.AddHandler(sendTimesline)
 
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
 
@@ -43,19 +42,38 @@ func main() {
 	dg.Close()
 }
 
-func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// bot自身の発言は処理する必要なし
+func sendTimesline(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// bot自身の発言は処理しない
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	discordChannel, err := s.Channel(m.ChannelID)
+	// メッセージが送られたチャンネルを取得
+	reciveMessageChannel, err := s.Channel(m.ChannelID)
 	if err != nil {
-		fmt.Println("Error could not get Channel info,", err)
+		fmt.Println("Error could not fetch Channel info,", err)
 		return
 	}
-	//
-	fmt.Println(discordChannel.Name)
 
-	// todo チャンネルidからチャンネル名を取得したい
+	messageURL := "https://discord.com/channels/" + m.GuildID + "/" + m.ChannelID + "/" + m.ID
+	contents := m.Author.Username + "\n" + m.Content + "\n" + messageURL
+
+	// メッセージが送られたチャンネルの名前にtimes_を含んでいれば、処理を続ける
+	if strings.Contains(reciveMessageChannel.Name, "times_") {
+		// 発言されたギルドIDを取得
+		guild, err := s.Guild(m.GuildID)
+		if err != nil {
+			log.Println("Error cloud not fetch Guild info,", err)
+		}
+		// ギルドIDから配下のチャンネルを全て探索
+		// timelineチャンネルがあれば、そこに発言を送る
+		for _, channelInGuild := range guild.Channels {
+			// timelineチャンネルにメッセージを送信
+			if strings.Contains(channelInGuild.Name, "timeline") {
+				s.ChannelMessageSend(channelInGuild.GuildID, contents)
+				return
+			}
+		}
+	}
+	return
 }
