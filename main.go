@@ -5,26 +5,65 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 )
 
-func main() {
+var db *sqlx.DB
+
+func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loding .env file")
+		log.Println("info: no .env file")
 	}
-	token := os.Getenv("TOKEN")
 
-	dg, err := discordgo.New("Bot " + token)
+	// MYSQLへの接続
+	mysqlUser := os.Getenv("MYSQL_USER")
+	mysqlPass := os.Getenv("MYSQL_PASSWORD")
+	mysqlAddr := os.Getenv("MYSQL_ADDRESS")
+	mysqlPort := os.Getenv("MYSQL_PORT")
+	mysqlDBName := "timeline"
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", mysqlUser, mysqlPass, mysqlAddr, mysqlPort, mysqlDBName)
+	db, err = sqlx.Connect("mysql", dsn)
+	if err != nil {
+		log.Fatal("Error: connect MySQL,", err)
+	}
+
+	// MYSQLのスキーマ定義
+	schema1 := `
+	CREATE TABLE IF NOT EXISTS timeline_channel (
+		guild_id    BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+		timeline_id BIGINT UNSIGNED NOT NULL
+	);`
+
+	schema2 := `
+	CREATE TABLE IF NOT EXISTS timeline_message (
+		timeline_message_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+		original_message_id BIGINT UNSIGNED NOT NULL
+	);`
+	db.MustExec(schema1)
+	db.MustExec(schema2)
+}
+
+func main() {
+	discordToken := os.Getenv("DISCORD_TOKEN")
+
+	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
 		fmt.Println("Error creacting Discord session,", err)
 	}
 
-	dg.AddHandler(sendTimesline)
+	// timelineチャンネルの登録(!timeline)
+	dg.AddHandler(registTimelineChannel)
+	// timelineに送る
+	dg.AddHandler(sendTimeline)
+	// 元のチャットが編集されたら、タイムライン側も編集
+	dg.AddHandler(editTimeline)
 
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
 
@@ -40,43 +79,4 @@ func main() {
 	<-sc
 
 	dg.Close()
-}
-
-func sendTimesline(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// bot自身の発言は処理しない
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	// メッセージが送られたチャンネルを取得
-	reciveMessageChannel, err := s.Channel(m.ChannelID)
-	if err != nil {
-		fmt.Println("Error could not fetch Channel info,", err)
-		return
-	}
-
-	messageURL := "https://discord.com/channels/" + m.GuildID + "/" + m.ChannelID + "/" + m.ID
-	contents := m.Author.Username + "\n" + m.Content + "\n" + messageURL
-
-	// メッセージが送られたチャンネルの名前にtimes_を含んでいれば、処理を続ける
-	if strings.Contains(reciveMessageChannel.Name, "times_") {
-		// 発言されたギルドのGuild構造体を取得
-		guildChannels, err := s.GuildChannels(m.GuildID)
-		if err != nil {
-			log.Println("Error cloud not fetch Guild info,", err)
-			return
-		}
-		// 発言されたギルド配下のチャンネルを全て探索
-		// timelineという名前のチャンネルがあれば、そこに発言を送る
-		for _, channelInGuild := range guildChannels {
-			fmt.Println(channelInGuild)
-			// timelineチャンネルにメッセージを送信
-			if strings.Contains(channelInGuild.Name, "timeline") {
-				fmt.Println(channelInGuild.Name)
-				s.ChannelMessageSend(channelInGuild.ID, contents)
-				return
-			}
-		}
-	}
-	return
 }
