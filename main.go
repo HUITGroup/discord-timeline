@@ -44,6 +44,7 @@ func init() {
 	schema2 := `
 	CREATE TABLE IF NOT EXISTS timeline_message (
 		timeline_message_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+		link_message_id 	BIGINT UNSIGNED NOT NULL,
 		original_message_id BIGINT UNSIGNED NOT NULL
 	);`
 	db.MustExec(schema1)
@@ -62,8 +63,10 @@ func main() {
 	dg.AddHandler(registTimelineChannel)
 	// timelineに送る
 	dg.AddHandler(sendTimeline)
-	// 元のチャットが編集されたら、タイムライン側も編集
+	// 元のメッセージが編集されたら、タイムライン側も編集
 	dg.AddHandler(editTimeline)
+	// 元のチャットが削除されたら、タイムライン側も削除
+	dg.AddHandler(delTimeline)
 
 	dg.Identify.Intents = discordgo.IntentsGuildMessages
 
