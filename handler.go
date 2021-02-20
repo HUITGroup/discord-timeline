@@ -54,9 +54,10 @@ func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if err != nil {
 			log.Println(err)
 		}
-		// メッセージIDをSQLに登録
+		// timelineにbotが投稿したメッセージのID, timesに投稿されたメッセージのIDをSQLに登録
 		ins, err := db.Prepare("INSERT INTO timeline_message(timeline_message_id, original_message_id) VALUES(?,?)")
-		ins.Exec(timelineMessage.ID, m.ChannelID)
+		ins.Exec(timelineMessage.ID, m.Message.ID)
+		defer ins.Close()
 	}
 	return
 }
@@ -71,24 +72,27 @@ func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
 		return
 	}
 
-	timelineChannelID := searchTimelineChannelID(s, mup.GuildID)
 	// 編集されたメッセージが、既にtimeline_messageテーブルに登録されていれば、
 	// 編集された内容をtimelineにも反映する
-	messageUpdateChannelID := mup.ChannelID
-	originalMessageID, timelineMessageID := alreadyTimeline(s, messageUpdateChannelID)
-	if originalMessageID != "" || timelineMessageID != "" {
+	timelineMessageID := getTimelineMessageID(s, mup.Message.ID)
+	if timelineMessageID != "" {
 		// 更新点の反映
 		messageEmbedAuthor := &discordgo.MessageEmbedAuthor{
 			Name:    mup.Author.Username,
 			IconURL: mup.Author.AvatarURL(""),
 		}
-
 		messageEmbed := &discordgo.MessageEmbed{
 			Description: mup.Message.Content,
 			Color:       0x111,
 			Author:      messageEmbedAuthor,
 		}
-		s.ChannelMessageEditEmbed(timelineChannelID, timelineMessageID, messageEmbed)
+
+		timelineChannelID := searchTimelineChannelID(s, mup.GuildID)
+		log.Println(timelineChannelID, timelineMessageID, messageEmbed)
+		_, err := s.ChannelMessageEditEmbed(timelineChannelID, timelineMessageID, messageEmbed)
+		if err != nil {
+			log.Println(err)
+		}
 	}
 	return
 }

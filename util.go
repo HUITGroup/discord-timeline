@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -10,10 +12,13 @@ func searchTimelineChannelID(s *discordgo.Session, guildID string) (timelineChan
 	return timelineChannelID
 }
 
-func alreadyTimeline(s *discordgo.Session, messageID string) (timelineMessageID, originalMessageID string) {
-	err := db.QueryRowx("SELECT * FROM timeline_message WHERE original_message_id = ?", messageID).Scan(&timelineMessageID, originalMessageID)
+// オリジナルのメッセージIDから、タイムライン側のメッセージIDを取る(Update時)
+func getTimelineMessageID(s *discordgo.Session, originalMessageID string) (timelineMessageID string) {
+	err := db.QueryRowx("SELECT timeline_message_id FROM timeline_message WHERE original_message_id = ?", originalMessageID).Scan(
+		&timelineMessageID)
 	if err != nil {
-		return "", ""
+		log.Println(err)
+		return ""
 	}
-	return timelineMessageID, originalMessageID
+	return timelineMessageID
 }
