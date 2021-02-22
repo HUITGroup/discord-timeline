@@ -8,6 +8,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// Discord is discordgo ChannelMessageSend wrapper
+type Discord interface {
+	SendMessage(ChannelID, content string)
+	SendMessageEmbed(ChannelID string, embed *discordgo.MessageEmbed)
+	EditMessage(ChannelID, messageID string, embed *discordgo.MessageEmbed)
+	EditMessageEmbed(ChannelID, messageID string, embed *discordgo.MessageEmbed)
+	DeleteMessage(ChannelID, messageID string)
+}
+
+func (s *discordgo.Session) SendMessage(ChannelID, content string) (message *discordgo.Message, err error) {
+	message, err = s.ChannelMessageSend(ChannelID, content)
+	return message, err
+}
+
 // timelineチャンネルを登録する
 func registTimelineChannel(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
@@ -135,7 +149,7 @@ func delTimeline(s *discordgo.Session, mdel *discordgo.MessageDelete) {
 	log.Println("delete event")
 
 	// 削除されたメッセージのIDを元に、タイムライン側もメッセージIDを取得して削除する
-	// timelineをdelした時もイベントが発火するが、止める手段がないため重くなってきたら考える
+	// fix: timelineをdelした時もイベントが発火するが、止める手段がないため重くなってきたら考える
 	linkMessageID, timelineMessageID, err := getLinkAndTimelineMessageID(mdel.Message.ID)
 	if err != nil {
 		log.Println("linkand,", err)
@@ -148,9 +162,6 @@ func delTimeline(s *discordgo.Session, mdel *discordgo.MessageDelete) {
 	s.ChannelMessageDelete(timelineChannelID, timelineMessageID)
 
 	// タイムライン側を削除したら、当該SQLのデータも削除
-	err = delTimelineFromDB(mdel.Message.ID)
-	if err != nil {
-		log.Println("deldb,", err)
-	}
+	delTimelineFromDB(mdel.Message.ID)
 	return
 }
