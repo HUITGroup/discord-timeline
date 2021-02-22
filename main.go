@@ -26,12 +26,15 @@ func init() {
 	mysqlPass := os.Getenv("MYSQL_PASSWORD")
 	mysqlAddr := os.Getenv("MYSQL_ADDRESS")
 	mysqlPort := os.Getenv("MYSQL_PORT")
-	mysqlDBName := "timeline"
+	mysqlDBName := os.Getenv("MYSQL_DATABASE")
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", mysqlUser, mysqlPass, mysqlAddr, mysqlPort, mysqlDBName)
+	log.Println("info: DSN ->", dsn)
 	db, err = sqlx.Connect("mysql", dsn)
 	if err != nil {
-		log.Fatal("Error: connect MySQL,", err)
+		errMessage := fmt.Sprintf("\x1b[31m%s\x1b[0m\n%s", "Error: Start SQL first.", err)
+		log.Fatal(errMessage)
+
 	}
 
 	// MYSQLのスキーマ定義
@@ -53,7 +56,6 @@ func init() {
 
 func main() {
 	discordToken := os.Getenv("DISCORD_TOKEN")
-
 	dg, err := discordgo.New("Bot " + discordToken)
 	if err != nil {
 		fmt.Println("Error creacting Discord session,", err)
@@ -72,11 +74,11 @@ func main() {
 
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("Error opening connection,", err)
+		log.Fatal("Error opening connection,", err)
 		return
 	}
 
-	fmt.Println("Bot is now running. Press Ctrl-C to exit")
+	log.Println("Bot is now running. Press Ctrl-C to exit")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc

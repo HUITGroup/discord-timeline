@@ -8,6 +8,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+// timelineチャンネルを登録する
 func registTimelineChannel(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -23,14 +24,14 @@ func registTimelineChannel(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		insert.Exec(m.GuildID, m.ChannelID, m.ChannelID)
 		defer insert.Close()
-		s.ChannelMessageSend(m.ChannelID, "Set timeline Channel")
+		s.ChannelMessageSend(m.ChannelID, "Set this channel on the timeline")
 	}
 	return
 }
 
 // timelineにメッセージを送る
 func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
-	log.Println("create")
+	log.Println("create event")
 	// bot自身の発言は処理しない
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -90,7 +91,7 @@ func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 // timelineのメッセージを編集する
 func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
-	log.Println("update")
+	log.Println("update event")
 
 	// embedMessege をsend するとなぜかupdateイベントが起こってnilポインタ参照して落ちる
 	// それの回避のため、nilポインタかどうかを確かめている
@@ -129,8 +130,9 @@ func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
 	return
 }
 
+// timelineのメッセージを削除する
 func delTimeline(s *discordgo.Session, mdel *discordgo.MessageDelete) {
-	log.Println("delete")
+	log.Println("delete event")
 
 	// 削除されたメッセージのIDを元に、タイムライン側もメッセージIDを取得して削除する
 	// timelineをdelした時もイベントが発火するが、止める手段がないため重くなってきたら考える

@@ -1,0 +1,18 @@
+version:  '3'
+
+services: 
+  db:
+    image: mysql:latest
+    restart: always
+    env_file: 
+      - .env
+
+  dc-timeline:
+    depends_on: 
+      - db
+    image: ayumin/discord-timeline:1.0.0
+    restart: always
+    env_file: 
+      - .env
+    environment: 
+      MYSQL_ADDRESS: db
