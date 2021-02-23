@@ -8,20 +8,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-// Discord is discordgo ChannelMessageSend wrapper
-type Discord interface {
-	SendMessage(ChannelID, content string)
-	SendMessageEmbed(ChannelID string, embed *discordgo.MessageEmbed)
-	EditMessage(ChannelID, messageID string, embed *discordgo.MessageEmbed)
-	EditMessageEmbed(ChannelID, messageID string, embed *discordgo.MessageEmbed)
-	DeleteMessage(ChannelID, messageID string)
-}
-
-func (s *discordgo.Session) SendMessage(ChannelID, content string) (message *discordgo.Message, err error) {
-	message, err = s.ChannelMessageSend(ChannelID, content)
-	return message, err
-}
-
 // timelineチャンネルを登録する
 func registTimelineChannel(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
