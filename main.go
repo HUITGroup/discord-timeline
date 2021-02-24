@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	_ "github.com/go-sql-driver/mysql"
@@ -30,11 +31,14 @@ func init() {
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", mysqlUser, mysqlPass, mysqlAddr, mysqlPort, mysqlDBName)
 	log.Println("info: DSN ->", dsn)
-	db, err = sqlx.Connect("mysql", dsn)
-	if err != nil {
-		errMessage := fmt.Sprintf("\x1b[31m%s\x1b[0m\n%s", "Error: Start SQL first.", err)
-		log.Fatal(errMessage)
-
+	for {
+		db, err = sqlx.Connect("mysql", dsn)
+		if err != nil {
+			log.Println("SQL Connect Error\n", err)
+			time.Sleep(time.Second * 15)
+			continue
+		}
+		break
 	}
 
 	// MYSQLのスキーマ定義
