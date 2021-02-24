@@ -20,7 +20,7 @@ https://discord.com/developers/applications/ からBotのトークンを取得�
 1. コンテナを build する
     
     ```bash
-    $ docker build -t shoumoji/discord-timeline:1.0.0 .
+    $ docker build -t discord-timeline:1.0.0 .
     ```
 
 1. docker-compose で MYSQL と一緒に起動

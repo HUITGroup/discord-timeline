@@ -24,6 +24,7 @@ func registTimelineChannel(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		insert.Exec(m.GuildID, m.ChannelID, m.ChannelID)
 		defer insert.Close()
+
 		s.ChannelMessageSend(m.ChannelID, "Set this channel on the timeline")
 	}
 	return
@@ -138,11 +139,11 @@ func delTimeline(s *discordgo.Session, mdel *discordgo.MessageDelete) {
 	// fix: timelineをdelした時もイベントが発火するが、止める手段がないため重くなってきたら考える
 	linkMessageID, timelineMessageID, err := getLinkAndTimelineMessageID(mdel.Message.ID)
 	if err != nil {
-		log.Println("linkand,", err)
+		log.Println(err)
 	}
 	timelineChannelID, err := searchTimelineChannelID(mdel.GuildID)
 	if err != nil {
-		log.Println("tlch,", err)
+		log.Println(err)
 	}
 	s.ChannelMessageDelete(timelineChannelID, linkMessageID)
 	s.ChannelMessageDelete(timelineChannelID, timelineMessageID)

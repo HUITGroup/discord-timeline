@@ -55,10 +55,9 @@ func init() {
 }
 
 func main() {
-	discordToken := os.Getenv("DISCORD_TOKEN")
-	dg, err := discordgo.New("Bot " + discordToken)
+	dg, err := NewDiscord(os.Getenv("DISCORD_TOKEN"))
 	if err != nil {
-		fmt.Println("Error creacting Discord session,", err)
+		log.Fatal("Error creacting Discord session,", err)
 	}
 
 	// timelineチャンネルの登録(!timeline)

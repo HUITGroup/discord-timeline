@@ -1,9 +1,16 @@
 package main
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"github.com/bwmarrin/discordgo"
+)
 
-// Service method for controll text service (CRUD)
-type Service interface {
+// Service example discord, slack, twitter, etc...
+type Service struct {
+	Discord Discord
+}
+
+// Doer method for controll text service (CRUD)
+type Doer interface {
 	Send()
 	SendEmbed()
 	Edit()
@@ -11,21 +18,17 @@ type Service interface {
 	Delete()
 }
 
-// ServiceImpl example discord, slack, twitter, etc...
-type ServiceImpl struct {
-	Discord Discord
-}
-
-// NewService これ意味ある？何か間違ってそう
-func NewService(Discord Discord) *ServiceImpl {
-	return &ServiceImpl{
-		Discord: Discord,
-	}
-}
-
-// Discord service
+// Discord info
 type Discord struct {
 	*discordgo.Session
+}
+
+// NewDiscord is constructor
+func NewDiscord(discordToken string) (*Discord, error) {
+	var d interface{}
+	d, err := discordgo.New("Bot " + discordToken)
+	discord := d.(*Discord)
+	return discord, err
 }
 
 // Send -> send message content for Discord
