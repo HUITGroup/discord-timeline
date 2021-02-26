@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -62,15 +63,28 @@ func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// timelineチャンネルがある場合、そこに送る
 		// messageUpdateならば編集処理、messageCreateならば送信＆DB登録処理
 		messageURL := "https://discord.com/channels/" + m.GuildID + "/" + m.ChannelID + "/" + m.ID
+		messageEmbedFooter := &discordgo.MessageEmbedFooter{
+			Text: reciveMessageChannel.Name,
+		}
 		messageEmbedAuthor := &discordgo.MessageEmbedAuthor{
 			Name:    m.Author.Username,
 			IconURL: m.Author.AvatarURL(""),
 		}
 
 		messageEmbed := &discordgo.MessageEmbed{
+			URL:         messageURL,
+			Type:        "",
+			Title:       "",
 			Description: m.Message.Content,
-			Color:       0x111,
+			Timestamp:   time.Now().Format(time.RFC3339),
+			Color:       0x90ee90,
+			Footer:      messageEmbedFooter,
+			Image:       &discordgo.MessageEmbedImage{},
+			Thumbnail:   &discordgo.MessageEmbedThumbnail{},
+			Video:       &discordgo.MessageEmbedVideo{},
+			Provider:    &discordgo.MessageEmbedProvider{},
 			Author:      messageEmbedAuthor,
+			Fields:      []*discordgo.MessageEmbedField{},
 		}
 		// 当該メッセージURL+タイムラインのコンテンツと2つ送信する
 		linkMessage, err := s.ChannelMessageSend(timelineChannelID, messageURL)
@@ -105,16 +119,34 @@ func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
 	if err != nil {
 		log.Println(err)
 	}
+	reciveMessageChannel, err := s.Channel(mup.ChannelID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	if timelineMessageID != "" {
 		// 更新点の反映
+		messageEmbedFooter := &discordgo.MessageEmbedFooter{
+			Text: reciveMessageChannel.Name,
+		}
 		messageEmbedAuthor := &discordgo.MessageEmbedAuthor{
 			Name:    mup.Author.Username,
 			IconURL: mup.Author.AvatarURL(""),
 		}
 		messageEmbed := &discordgo.MessageEmbed{
+			URL:         "",
+			Type:        "",
+			Title:       "",
 			Description: mup.Message.Content,
-			Color:       0x111,
+			Timestamp:   "",
+			Color:       0x90ee90,
+			Footer:      messageEmbedFooter,
+			Image:       &discordgo.MessageEmbedImage{},
+			Thumbnail:   &discordgo.MessageEmbedThumbnail{},
+			Video:       &discordgo.MessageEmbedVideo{},
+			Provider:    &discordgo.MessageEmbedProvider{},
 			Author:      messageEmbedAuthor,
+			Fields:      []*discordgo.MessageEmbedField{},
 		}
 
 		timelineChannelID, err := searchTimelineChannelID(mup.GuildID)
