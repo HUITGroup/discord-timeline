@@ -49,8 +49,8 @@ func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// メッセージが送られたチャンネルの名前にtimes_を含んでいれば、処理を続ける
-	if strings.Contains(reciveMessageChannel.Name, "times_") {
+	// メッセージが送られたチャンネルの名前の prefix が `times_` であれば、処理を続ける
+	if strings.HasPrefix(reciveMessageChannel.Name, "times_") {
 		timelineChannelID, err := searchTimelineChannelID(m.GuildID)
 		if err != nil {
 			log.Println(err)
@@ -118,6 +118,7 @@ func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
 	timelineMessageID, err := getTimelineMessageID(s, mup.Message.ID)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 	reciveMessageChannel, err := s.Channel(mup.ChannelID)
 	if err != nil {
