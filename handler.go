@@ -63,6 +63,14 @@ func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// timelineチャンネルがある場合、そこに送る
 		// messageUpdateならば編集処理、messageCreateならば送信＆DB登録処理
 		messageURL := "https://discord.com/channels/" + m.GuildID + "/" + m.ChannelID + "/" + m.ID
+		// embedでないメッセージの場合、ImageURLを入れると落ちる
+		var reciveMessageImageURL string
+		if len(m.Attachments) != 0 {
+			reciveMessageImageURL = m.Attachments[0].URL
+		}
+		messageImage := &discordgo.MessageEmbedImage{
+			URL: reciveMessageImageURL,
+		}
 		messageEmbedFooter := &discordgo.MessageEmbedFooter{
 			Text: reciveMessageChannel.Name,
 		}
@@ -79,7 +87,7 @@ func sendTimeline(s *discordgo.Session, m *discordgo.MessageCreate) {
 			Timestamp:   time.Now().Format(time.RFC3339),
 			Color:       0x90ee90,
 			Footer:      messageEmbedFooter,
-			Image:       &discordgo.MessageEmbedImage{},
+			Image:       messageImage,
 			Thumbnail:   &discordgo.MessageEmbedThumbnail{},
 			Video:       &discordgo.MessageEmbedVideo{},
 			Provider:    &discordgo.MessageEmbedProvider{},
@@ -126,6 +134,13 @@ func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
 	}
 	if timelineMessageID != "" {
 		// 更新点の反映
+		var reciveMessageImageURL string
+		if len(mup.Attachments) != 0 {
+			reciveMessageImageURL = mup.Attachments[0].URL
+		}
+		messageImage := &discordgo.MessageEmbedImage{
+			URL: reciveMessageImageURL,
+		}
 		messageEmbedFooter := &discordgo.MessageEmbedFooter{
 			Text: reciveMessageChannel.Name,
 		}
@@ -141,7 +156,7 @@ func editTimeline(s *discordgo.Session, mup *discordgo.MessageUpdate) {
 			Timestamp:   "",
 			Color:       0x90ee90,
 			Footer:      messageEmbedFooter,
-			Image:       &discordgo.MessageEmbedImage{},
+			Image:       messageImage,
 			Thumbnail:   &discordgo.MessageEmbedThumbnail{},
 			Video:       &discordgo.MessageEmbedVideo{},
 			Provider:    &discordgo.MessageEmbedProvider{},
