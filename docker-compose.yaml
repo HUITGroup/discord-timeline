@@ -10,7 +10,9 @@ services:
   dc-timeline:
     depends_on: 
       - db
-    image: ayumin/discord-timeline:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: always
     env_file: 
       - .env
